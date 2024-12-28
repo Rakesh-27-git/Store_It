@@ -13,10 +13,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { createAccount } from "@/lib/actions/users";
+import OTPModel from "./ui/OTPModel";
 
 type FormType = "sign-in" | "sign-up";
 
@@ -31,8 +34,9 @@ const AuthFormSchema = (formType: FormType) => {
 };
 
 const AuthForm = ({ type }: { type: FormType }) => {
-  const [isLoading, setisLoading] = useState(false);
-  const [errorMessage, seterrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [accountId, setAccountId] = useState(null);
 
   const formSchema = AuthFormSchema(type);
 
@@ -44,27 +48,63 @@ const AuthForm = ({ type }: { type: FormType }) => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-  }
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const user = await createAccount({
+        fullName: values.fullName || "",
+        email: values.email,
+      });
+
+      setAccountId(user);
+    } catch {
+      setErrorMessage("Failed to create account. Please tyr again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="auth-form">
-        <h1 className="form-title">
-          {type === "sign-in" ? "Sign In" : "Sign Up"}
-        </h1>
-        {type === "sign-up" && (
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="auth-form">
+          <h1 className="form-title">
+            {type === "sign-in" ? "Sign In" : "Sign Up"}
+          </h1>
+          {type === "sign-up" && (
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="shad-form-item">
+                    <FormLabel className="shad-form-label">Full Name</FormLabel>
+
+                    <FormControl>
+                      <Input
+                        placeholder="Enter your full name"
+                        className="shad-input"
+                        {...field}
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage className="shad-form-message" />
+                </FormItem>
+              )}
+            />
+          )}
           <FormField
             control={form.control}
-            name="fullName"
+            name="email"
             render={({ field }) => (
               <FormItem>
                 <div className="shad-form-item">
-                  <FormLabel className="shad-form-label">Full Name</FormLabel>
+                  <FormLabel className="shad-form-label">Email</FormLabel>
 
                   <FormControl>
                     <Input
-                      placeholder="Enter your full name"
+                      placeholder="Enter your email"
                       className="shad-input"
                       {...field}
                     />
@@ -74,61 +114,44 @@ const AuthForm = ({ type }: { type: FormType }) => {
               </FormItem>
             )}
           />
-        )}
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <div className="shad-form-item">
-                <FormLabel className="shad-form-label">Email</FormLabel>
-
-                <FormControl>
-                  <Input
-                    placeholder="Enter your email"
-                    className="shad-input"
-                    {...field}
-                  />
-                </FormControl>
-              </div>
-              <FormMessage className="shad-form-message" />
-            </FormItem>
-          )}
-        />
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="form-submit-button"
-        >
-          {type === "sign-in" ? "Sign In" : "Sign Up"}
-          {isLoading && (
-            <Image
-              src="/assets/icons/loader.svg"
-              alt="loader"
-              width={24}
-              height={24}
-              className="ml-2 animate-spin"
-            />
-          )}
-        </Button>
-        {errorMessage && <p className="error-message">*{errorMessage}</p>}
-
-        <div className="body-2 flex justify-center">
-          <p className="text-light-100">
-            {type === "sign-in"
-              ? "Don't have an account?"
-              : "Already have an account?"}
-          </p>
-          <Link
-            href={type === "sign-in" ? "/sign-up" : "/sign-in"}
-            className="ml-1 font-medium text-brand"
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="form-submit-button"
           >
-            {" "}
-            {type === "sign-in" ? "Sign Up" : "Sign In"}
-          </Link>
-        </div>
-      </form>
-    </Form>
+            {type === "sign-in" ? "Sign In" : "Sign Up"}
+            {isLoading && (
+              <Image
+                src="/assets/icons/loader.svg"
+                alt="loader"
+                width={24}
+                height={24}
+                className="ml-2 animate-spin"
+              />
+            )}
+          </Button>
+          {errorMessage && <p className="error-message">*{errorMessage}</p>}
+
+          <div className="body-2 flex justify-center">
+            <p className="text-light-100">
+              {type === "sign-in"
+                ? "Don't have an account?"
+                : "Already have an account?"}
+            </p>
+            <Link
+              href={type === "sign-in" ? "/sign-up" : "/sign-in"}
+              className="ml-1 font-medium text-brand"
+            >
+              {" "}
+              {type === "sign-in" ? "Sign Up" : "Sign In"}
+            </Link>
+          </div>
+        </form>
+      </Form>
+      {accountId && (
+        <OTPModel email={form.getValues("email")} accountId={accountId} />
+      )}
+    </>
   );
 };
 
