@@ -34,6 +34,8 @@ const OtpModal = ({
   const [isOpen, setIsOpen] = useState(true);
   const [password, setPassword] = useState("");
 
+  //WIP: show the otp error message
+
   const router = useRouter();
 
   const handelSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -54,6 +56,8 @@ const OtpModal = ({
       await sendEmailOTP(email);
     } catch (error) {
       console.log("Failed to send OTP", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

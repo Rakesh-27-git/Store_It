@@ -1,13 +1,13 @@
 "use server";
 
+import { avatarPlaceholderUrl } from "@/constants";
 import { getUserByEmail, sendEmailOTP } from "./queries";
-import { createAdminClient } from "@/lib/appwrite";
+import { createAdminClient, createSessionClient } from "@/lib/appwrite";
 import { appwriteConfig } from "@/lib/appwrite/config";
 import { parseStringify } from "@/lib/utils";
 import { cookies } from "next/headers";
-import { ID } from "node-appwrite";
-
-const DEFAULT_AVATAR_URL = "https://www.svgrepo.com/show/30132/avatar.svg";
+import { ID, Query } from "node-appwrite";
+import { redirect } from "next/navigation";
 
 export const createAccount = async ({
   fullName,
@@ -17,10 +17,6 @@ export const createAccount = async ({
   email: string;
 }) => {
   const existingUser = await getUserByEmail(email);
-
-  // if (existingUser) {
-  //   throw new Error("User already exist");
-  // }
 
   const accountId = await sendEmailOTP(email);
   if (!accountId) throw new Error("Failed to send email OTP");
@@ -35,7 +31,7 @@ export const createAccount = async ({
         {
           fullName,
           email,
-          avatar: DEFAULT_AVATAR_URL,
+          avatar: avatarPlaceholderUrl,
           accountId,
         }
       );
@@ -44,6 +40,7 @@ export const createAccount = async ({
       throw new Error("Failed to create user document");
     }
   }
+  console.log("accoutId", accountId);
   return parseStringify(accountId);
 };
 
@@ -66,8 +63,53 @@ export const verifySecret = async ({
     });
 
     return parseStringify(session.$id);
-    
   } catch (error) {
     console.log("Failed to verify OTP", error);
+  }
+};
+
+export const getCurrentUser = async () => {
+  try {
+    const { databases, account } = await createSessionClient();
+
+    const result = await account.get();
+
+    const user = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.usersCollectionId,
+      [Query.equal("accountId", result.$id)]
+    );
+
+    if (user.total <= 0) return null;
+
+    return parseStringify(user.documents[0]);
+  } catch (error) {
+    console.log("Failed to get Current User", error);
+  }
+};
+
+export const signInUser = async ({email}:{email:string}) => {
+  try {
+    const existingUser = await getUserByEmail(email);
+
+    if (existingUser) {
+      await sendEmailOTP(email);
+      return parseStringify({ accountId: existingUser.accountId });
+    }
+    return parseStringify({ accountId: null, error: "User not found" });
+  } catch (error) {
+    console.log("Failed to SignIn", error);
+  }
+};
+
+export const signOutUser = async () => {
+  const { account } = await createSessionClient();
+  try {
+    await account.deleteSession("current");
+    (await cookies()).delete("appwrite-session");
+  } catch (error) {
+    console.log("Failed to SignOut", error);
+  } finally {
+    redirect("/sign-in");
   }
 };
