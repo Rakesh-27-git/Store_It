@@ -61,7 +61,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
             })
           : await signInUser({ email: values.email });
 
-      setAccountId(user);
+      setAccountId(user.accountId);
     } catch {
       setErrorMessage("Failed to create account. Please tyr again.");
     } finally {

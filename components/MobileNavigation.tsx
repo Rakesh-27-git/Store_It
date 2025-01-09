@@ -1,29 +1,40 @@
 "use client";
 
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import Image from "next/image";
 import React, { useState } from "react";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "./ui/sheet";
+import { usePathname } from "next/navigation";
+import { Separator } from "@radix-ui/react-separator";
 import { navItems } from "@/constants";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { usePathname } from "next/navigation";
-import FileUploader from "./FileUploader";
-import { Button } from "./ui/button";
-import { Separator } from "./ui/separator";
+import { Button } from "@/components/ui/button";
+import FileUploader from "@/components/FileUploader";
 import { signOutUser } from "@/lib/actions/users";
 
-type Props = {
+interface Props {
   $id: string;
   accountId: string;
   fullName: string;
   avatar: string;
   email: string;
-};
+}
 
-const MobileNavigation = ({ fullName, avatar, email }: Props) => {
+const MobileNavigation = ({
+  $id: ownerId,
+  accountId,
+  fullName,
+  avatar,
+  email,
+}: Props) => {
+  const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  const [open, setOpen] = useState(false);
   return (
     <header className="mobile-header">
       <Image
@@ -33,6 +44,7 @@ const MobileNavigation = ({ fullName, avatar, email }: Props) => {
         height={52}
         className="h-auto"
       />
+
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger>
           <Image
@@ -90,11 +102,11 @@ const MobileNavigation = ({ fullName, avatar, email }: Props) => {
           <Separator className="my-5 bg-light-200/20" />
 
           <div className="flex flex-col justify-between gap-5 pb-5">
-            <FileUploader />
+            <FileUploader ownerId={ownerId} accountId={accountId} />
             <Button
               type="submit"
-              onClick={async () => await signOutUser}
               className="mobile-sign-out-button"
+              onClick={async () => await signOutUser()}
             >
               <Image
                 src="/assets/icons/logout.svg"

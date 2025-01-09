@@ -48,6 +48,8 @@ const OtpModal = ({
       }
     } catch (error) {
       console.log("Failed to verify OTP", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

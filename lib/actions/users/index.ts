@@ -1,7 +1,7 @@
 "use server";
 
 import { avatarPlaceholderUrl } from "@/constants";
-import { getUserByEmail, sendEmailOTP } from "./queries";
+import { getUserByEmail, handelError, sendEmailOTP } from "./queries";
 import { createAdminClient, createSessionClient } from "@/lib/appwrite";
 import { appwriteConfig } from "@/lib/appwrite/config";
 import { parseStringify } from "@/lib/utils";
@@ -40,8 +40,7 @@ export const createAccount = async ({
       throw new Error("Failed to create user document");
     }
   }
-  console.log("accoutId", accountId);
-  return parseStringify(accountId);
+  return parseStringify({ accountId });
 };
 
 export const verifySecret = async ({
@@ -53,6 +52,7 @@ export const verifySecret = async ({
 }) => {
   try {
     const { account } = await createAdminClient();
+
     const session = await account.createSession(accountId, password);
 
     (await cookies()).set("appwrite-session", session.secret, {
@@ -62,9 +62,9 @@ export const verifySecret = async ({
       secure: true,
     });
 
-    return parseStringify(session.$id);
+    return parseStringify({ sessionId: session.$id });
   } catch (error) {
-    console.log("Failed to verify OTP", error);
+    handelError(error, "Failed to verify OTP");
   }
 };
 
@@ -88,7 +88,7 @@ export const getCurrentUser = async () => {
   }
 };
 
-export const signInUser = async ({email}:{email:string}) => {
+export const signInUser = async ({ email }: { email: string }) => {
   try {
     const existingUser = await getUserByEmail(email);
 
