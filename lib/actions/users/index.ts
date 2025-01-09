@@ -71,7 +71,6 @@ export const verifySecret = async ({
 export const getCurrentUser = async () => {
   try {
     const { databases, account } = await createSessionClient();
-
     const result = await account.get();
 
     const user = await databases.listDocuments(
@@ -103,8 +102,8 @@ export const signInUser = async ({ email }: { email: string }) => {
 };
 
 export const signOutUser = async () => {
-  const { account } = await createSessionClient();
   try {
+    const { account } = await createSessionClient();
     await account.deleteSession("current");
     (await cookies()).delete("appwrite-session");
   } catch (error) {
