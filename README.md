@@ -4,6 +4,8 @@
 
 **Live demo:** https://store-it-tan.vercel.app
 
+![StoreIt sign-in screen](docs/screenshot.png)
+
 
 ## What it does
 
